@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HS Risk Calculator</title>
+    <style>
+        body {
+            background-color: #f4f6f8; /* Un fondo gris muy suave */
+            margin: 0;
+            padding: 40px 20px;
+            font-family: 'Segoe UI', Arial, sans-serif;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="hs-calculator-wrapper" style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 500px; margin: auto; padding: 25px; background: #ffffff; border: 1px solid #ddd; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); color: #333;">
+        
+        <h2 style="color: #1a73e8; text-align: center; margin-top: 0; margin-bottom: 5px;">HS Risk Calculator</h2>
+        <p style="font-size: 12px; color: #666; text-align: center; margin-bottom: 20px;">Molina-Leyva, A. (2025)</p>
+
+        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px; font-size: 13px; line-height: 1.4;">
+            <p style="margin: 0 0 8px 0;"><strong>Clinical Phenotypes (Distribution):</strong></p>
+            <ul style="margin: 0; padding-left: 20px;">
+                <li><strong>Upper:</strong> Axillary, mammary/pectoral region.</li>
+                <li><strong>Lower:</strong> Abdomen, genitalia, inguinal, or gluteal areas.</li>
+                <li><strong>Atypical:</strong> Back, face, head, and neck.</li>
+                <li><strong>Progressor:</strong> Combination of different distributions.</li>
+            </ul>
+        </div>
+
+        <div style="margin-bottom: 15px;">
+            <label style="display: block; font-weight: bold; font-size: 14px;">IHS4 baseline score (Allowed 5-10):</label>
+            <input type="number" id="v_ihs4" min="5" max="10" value="5" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box;">
+        </div>
+
+        <div style="margin-bottom: 15px;">
+            <label style="display: block; font-weight: bold; font-size: 14px;">Age of onset (years):</label>
+            <input type="number" id="v_age" min="1" value="20" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box;">
+        </div>
+
+        <div style="margin-bottom: 15px;">
+            <label style="display: block; font-weight: bold; font-size: 14px;">Disease duration (years):</label>
+            <input type="number" id="v_dur" min="0" value="5" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box;">
+        </div>
+
+        <div style="margin-bottom: 15px;">
+            <label style="display: block; font-weight: bold; font-size: 14px;">Familiar history of HS:</label>
+            <select id="v_fam" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box;">
+                <option value="0">Yes</option>
+                <option value="1" selected>No</option>
+            </select>
+        </div>
+
+        <div style="margin-bottom: 15px;">
+            <label style="display: block; font-weight: bold; font-size: 14px;">HS Distribution (Progressor or Lower):</label>
+            <select id="v_pro" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box;">
+                <option value="1">Yes</option>
+                <option value="0" selected>No</option>
+            </select>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; font-weight: bold; font-size: 14px;">Hurley stage at baseline:</label>
+            <select id="v_hur" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box;">
+                <option value="0" selected>Stage I-II</option>
+                <option value="1">Stage III</option>
+            </select>
+        </div>
+
+        <button type="button" onclick="doTheMath()" style="width: 100%; padding: 15px; background-color: #1a73e8; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; transition: background 0.3s;">
+            ASSESS RISK OF PROGRESSION
+        </button>
+
+        <div id="v_result" style="margin-top: 25px; padding: 20px; border-radius: 8px; text-align: center; display: none; font-weight: bold;">
+            <div id="v_perc" style="font-size: 34px; margin-bottom: 5px;"></div>
+            <div id="v_label" style="font-size: 20px; letter-spacing: 1px;"></div>
+        </div>
+
+        <p style="font-size: 11px; color: #888; margin-top: 25px; text-align: center; line-height: 1.4; border-top: 1px solid #eee; padding-top: 15px;">
+            Internal validation (n=226, AUC > 0.76). <br>
+            <strong>Low Risk</strong> < 10% (NPV > 90.5%). <strong>Severe Risk</strong> > 30%.
+        </p>
+
+        <script>
+        function doTheMath() {
+            // Data acquisition
+            var ihs4 = parseFloat(document.getElementById('v_ihs4').value) || 5;
+            var age = parseFloat(document.getElementById('v_age').value) || 20;
+            var dur = parseFloat(document.getElementById('v_dur').value) || 0;
+            var fam = parseFloat(document.getElementById('v_fam').value);
+            var pro = parseFloat(document.getElementById('v_pro').value);
+            var hur = parseFloat(document.getElementById('v_hur').value);
+
+            // Safety range control
+            if (ihs4 < 5) ihs4 = 5; if (ihs4 > 10) ihs4 = 10;
+            if (age < 1) age = 1;
+
+            // Multivariable Logistic Regression Equation
+            // Note: No familiar history (1) increases risk (OR 3.6 -> beta ~1.28)
+            var b0 = -2.754;
+            var logit = b0 + (0.324 * ihs4) + (-0.056 * age) + (0.031 * dur) + (1.28 * fam) + (0.577 * pro) + (0.463 * hur);
+            
+            var prob = 1 / (1 + Math.exp(-logit));
+            var perc = (prob * 100).toFixed(1);
+
+            // Update UI
+            var box = document.getElementById('v_result');
+            var pText = document.getElementById('v_perc');
+            var lText = document.getElementById('v_label');
+
+            box.style.display = 'block';
+            pText.innerHTML = perc + "%";
+
+            if (prob < 0.10) {
+                lText.innerHTML = "LOW RISK";
+                box.style.backgroundColor = "#d4edda";
+                box.style.color = "#155724";
+                box.style.border = "1px solid #c3e6cb";
+            } else if (prob < 0.30) {
+                lText.innerHTML = "MODERATE RISK";
+                box.style.backgroundColor = "#fff3cd";
+                box.style.color = "#856404";
+                box.style.border = "1px solid #ffeeba";
+            } else {
+                lText.innerHTML = "SEVERE RISK";
+                box.style.backgroundColor = "#f8d7da";
+                box.style.color = "#721c24";
+                box.style.border = "1px solid #f5c6cb";
+            }
+        }
+        </script>
+    </div>
+    </body>
+</html>
