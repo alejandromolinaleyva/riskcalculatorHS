@@ -99,8 +99,8 @@
 
             // Multivariable Logistic Regression Equation
             // Note: No familiar history (1) increases risk (OR 3.6 -> beta ~1.28)
-            var b0 = -4.0676;
-            var logit = b0 + (0.2800 * ihs4) + (-0.0406 * age) + (0.0258 * dur) + (0.9028 * fam) + (0.8349 * pro) + (0.4674 * hur);
+            var b0 = -3.8517;
+var logi    t = b0 + (0.2769 * ihs4) + (-0.0390 * age) + (0.0282 * dur) + (0.9688 * fam) + (0.8232 * pro) + (0.9212 * hur);
             
             var prob = 1 / (1 + Math.exp(-logit));
             var perc = (prob * 100).toFixed(1);
